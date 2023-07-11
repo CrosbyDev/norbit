@@ -2,32 +2,30 @@ package io.github.racoondog.norbit.listeners;
 
 import io.github.racoondog.norbit.EventHandler;
 
-import java.lang.invoke.LambdaMetafactory;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Constructor;
+import java.lang.invoke.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
  * Default implementation of a {@link IListener} that creates a lambda at runtime to call the target method.
  */
 public class LambdaListener implements IListener {
+    @FunctionalInterface
     public interface Factory {
         MethodHandles.Lookup create(Method lookupInMethod, Class<?> klass) throws InvocationTargetException, IllegalAccessException;
     }
 
-    private static boolean isJava1dot8;
-    private static Constructor<MethodHandles.Lookup> lookupConstructor;
-    private static Method privateLookupInMethod;
+    private static final Method privateLookupInMethod;
+    private static final Map<Method, MethodHandle> methodHandleCache = new ConcurrentHashMap<>();
 
     private final Class<?> target;
     private final boolean isStatic;
     private final int priority;
-    private Consumer<Object> executor;
+    private final Consumer<Object> executor;
 
     /**
      * Creates a new lambda listener, can be used for both static and non-static methods.
@@ -42,40 +40,40 @@ public class LambdaListener implements IListener {
         this.priority = method.getAnnotation(EventHandler.class).priority();
 
         try {
-            String name = method.getName();
-            MethodHandles.Lookup lookup;
-
-            if (isJava1dot8) {
-                boolean a = lookupConstructor.isAccessible();
-                lookupConstructor.setAccessible(true);
-                lookup = lookupConstructor.newInstance(klass);
-                lookupConstructor.setAccessible(a);
-            }
-            else {
-                lookup = factory.create(privateLookupInMethod, klass);
-            }
-
-            MethodType methodType = MethodType.methodType(void.class, method.getParameters()[0].getType());
-
-            MethodHandle methodHandle;
-            MethodType invokedType;
-
-            if (isStatic) {
-                methodHandle = lookup.findStatic(klass, name, methodType);
-                invokedType = MethodType.methodType(Consumer.class);
-            }
-            else {
-                methodHandle = lookup.findVirtual(klass, name, methodType);
-                invokedType = MethodType.methodType(Consumer.class, klass);
-            }
-
-            MethodHandle lambdaFactory = LambdaMetafactory.metafactory(lookup, "accept", invokedType, MethodType.methodType(void.class, Object.class), methodHandle, methodType).getTarget();
-
-            if (isStatic) this.executor = (Consumer<Object>) lambdaFactory.invoke();
-            else this.executor = (Consumer<Object>) lambdaFactory.invoke(object);
+            this.executor = isStatic ? (Consumer<Object>) staticLambdaFactory(factory, klass, method).invoke()
+                    : (Consumer<Object>) computeLambdaFactory(factory, klass, method).invoke(object);
         } catch (Throwable throwable) {
-            throwable.printStackTrace();
+            throw new RuntimeException(throwable);
         }
+    }
+
+    private static MethodHandle staticLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
+        String name = method.getName();
+        MethodHandles.Lookup lookup = factory.create(privateLookupInMethod, klass);
+
+        MethodType methodType = MethodType.methodType(void.class, method.getParameters()[0].getType());
+
+        MethodHandle methodHandle = lookup.findStatic(klass, name, methodType);
+        MethodType invokedType = MethodType.methodType(Consumer.class);
+
+        return LambdaMetafactory.metafactory(lookup, "accept", invokedType, MethodType.methodType(void.class, Object.class), methodHandle, methodType).getTarget();
+    }
+
+    private static MethodHandle computeLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
+        MethodHandle lambdaFactory = methodHandleCache.get(method);
+        if (lambdaFactory != null) return lambdaFactory;
+
+        String name = method.getName();
+        MethodHandles.Lookup lookup = factory.create(privateLookupInMethod, klass);
+
+        MethodType methodType = MethodType.methodType(void.class, method.getParameters()[0].getType());
+
+        MethodHandle methodHandle = lookup.findVirtual(klass, name, methodType);
+        MethodType invokedType = MethodType.methodType(Consumer.class, klass);
+
+        lambdaFactory = LambdaMetafactory.metafactory(lookup, "accept", invokedType, MethodType.methodType(void.class, Object.class), methodHandle, methodType).getTarget();
+        methodHandleCache.put(method, lambdaFactory);
+        return lambdaFactory;
     }
 
     @Override
@@ -100,16 +98,9 @@ public class LambdaListener implements IListener {
 
     static {
         try {
-            isJava1dot8 = System.getProperty("java.version").startsWith("1.8");
-
-            if (isJava1dot8) {
-                lookupConstructor = MethodHandles.Lookup.class.getDeclaredConstructor(Class.class);
-            }
-            else {
-                privateLookupInMethod = MethodHandles.class.getDeclaredMethod("privateLookupIn", Class.class, MethodHandles.Lookup.class);
-            }
+            privateLookupInMethod = MethodHandles.class.getDeclaredMethod("privateLookupIn", Class.class, MethodHandles.Lookup.class);
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 }

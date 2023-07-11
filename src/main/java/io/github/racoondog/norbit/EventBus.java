@@ -4,28 +4,17 @@ import io.github.racoondog.norbit.listeners.IListener;
 import io.github.racoondog.norbit.listeners.LambdaListener;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.Function;
 
 /**
  * Default implementation of {@link IEventBus}.
  */
 public class EventBus implements IEventBus {
-    private static class LambdaFactoryInfo {
-        public final String packagePrefix;
-        public final LambdaListener.Factory factory;
+    private record LambdaFactoryInfo(String packagePrefix, LambdaListener.Factory factory) {}
 
-        public LambdaFactoryInfo(String packagePrefix, LambdaListener.Factory factory) {
-            this.packagePrefix = packagePrefix;
-            this.factory = factory;
-        }
-    }
-
-    private final Map<Object, List<IListener>> listenerCache = new ConcurrentHashMap<>();
+    private final Map<Object, List<IListener>> listenerCache = Collections.synchronizedMap(new IdentityHashMap<>());
     private final Map<Class<?>, List<IListener>> staticListenerCache = new ConcurrentHashMap<>();
 
     private final Map<Class<?>, List<IListener>> listenerMap = new ConcurrentHashMap<>();
@@ -68,12 +57,12 @@ public class EventBus implements IEventBus {
 
     @Override
     public void subscribe(Object object) {
-        subscribe(getListeners(object.getClass(), object), false);
+        subscribe(getInstanceListeners(object), false);
     }
 
     @Override
     public void subscribe(Class<?> klass) {
-        subscribe(getListeners(klass, null), true);
+        subscribe(getStaticListeners(klass), true);
     }
 
     @Override
@@ -105,12 +94,13 @@ public class EventBus implements IEventBus {
 
     @Override
     public void unsubscribe(Object object) {
-        unsubscribe(getListeners(object.getClass(), object), false);
+        unsubscribe(getInstanceListeners(object), false);
+        listenerCache.remove(object);
     }
 
     @Override
     public void unsubscribe(Class<?> klass) {
-        unsubscribe(getListeners(klass, null), true);
+        unsubscribe(getStaticListeners(klass), true);
     }
 
     @Override
@@ -133,35 +123,26 @@ public class EventBus implements IEventBus {
         }
     }
 
+    private List<IListener> getStaticListeners(Class<?> klass) {
+        return staticListenerCache.computeIfAbsent(klass, o -> getListeners(o, null));
+    }
+
+    private List<IListener> getInstanceListeners(Object object) {
+        return listenerCache.computeIfAbsent(object, o -> getListeners(o.getClass(), o));
+    }
+
     private List<IListener> getListeners(Class<?> klass, Object object) {
-        Function<Object, List<IListener>> func = o -> {
-            List<IListener> listeners = new CopyOnWriteArrayList<>();
-
-            getListeners(listeners, klass, object);
-
-            return listeners;
-        };
-
-        if (object == null) return staticListenerCache.computeIfAbsent(klass, func);
-
-        // We need to check if the instances are the same and avoid using .equals() and .hashCode()
-        for (Object key : listenerCache.keySet()) {
-            if (key == object) return listenerCache.get(object);
-        }
-
-        List<IListener> listeners = func.apply(object);
-        listenerCache.put(object, listeners);
+        List<IListener> listeners = new CopyOnWriteArrayList<>();
+        getListeners(listeners, klass, object);
         return listeners;
     }
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object) {
-        for (Method method : klass.getDeclaredMethods()) {
+        for (Method method : klass.getMethods()) {
             if (isValid(method)) {
                 listeners.add(new LambdaListener(getLambdaFactory(klass), klass, object, method));
             }
         }
-
-        if (klass.getSuperclass() != null) getListeners(listeners, klass.getSuperclass(), object);
     }
 
     private boolean isValid(Method method) {
