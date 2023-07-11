@@ -18,3 +18,9 @@ Replace O(n) `Set` iteration with O(1) `Map` hash function thanks to an `Identit
 
 ### Remove recursion
 Instead of recursively looping through an object's superclasses to get all it's declared methods, loop once using `klass.getMethods`
+
+### Fail-fast
+When an error is thrown in the `LambdaListener` constructor, immediately re-throw the error instead of nulling the `Consumer`, which would result in a `NullPointerException` down the line.
+
+### Human-error prevention
+Prevent duplicate listener subscription in most cases. Note: This is not a catch-all, static listeners will still be duplicated in the case where the class is already subscribed, and you subscribe an instance.

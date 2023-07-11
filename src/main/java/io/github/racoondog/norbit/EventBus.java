@@ -57,11 +57,13 @@ public class EventBus implements IEventBus {
 
     @Override
     public void subscribe(Object object) {
+        if (listenerCache.containsKey(object)) return; // Prevent duplicate subscription
         subscribe(getInstanceListeners(object), false);
     }
 
     @Override
     public void subscribe(Class<?> klass) {
+        if (listenerMap.containsKey(klass)) return; // Instance subscription already registers static listeners + Prevent duplicate subscription
         subscribe(getStaticListeners(klass), true);
     }
 
