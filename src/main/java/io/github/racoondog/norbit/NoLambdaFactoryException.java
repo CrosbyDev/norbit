@@ -1,4 +1,4 @@
-package meteordevelopment.orbit;
+package io.github.racoondog.norbit;
 
 /**
  * Thrown when an {@link IEventBus} can't find a registered lambda factory to use.

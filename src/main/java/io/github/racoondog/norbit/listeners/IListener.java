@@ -1,4 +1,4 @@
-package meteordevelopment.orbit.listeners;
+package io.github.racoondog.norbit.listeners;
 
 /**
  * Base type for all listeners.

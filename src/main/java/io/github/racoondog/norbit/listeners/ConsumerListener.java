@@ -1,6 +1,6 @@
-package meteordevelopment.orbit.listeners;
+package io.github.racoondog.norbit.listeners;
 
-import meteordevelopment.orbit.EventPriority;
+import io.github.racoondog.norbit.EventPriority;
 
 import java.util.function.Consumer;
 

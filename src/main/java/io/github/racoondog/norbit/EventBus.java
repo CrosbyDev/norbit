@@ -1,7 +1,7 @@
-package meteordevelopment.orbit;
+package io.github.racoondog.norbit;
 
-import meteordevelopment.orbit.listeners.IListener;
-import meteordevelopment.orbit.listeners.LambdaListener;
+import io.github.racoondog.norbit.listeners.IListener;
+import io.github.racoondog.norbit.listeners.LambdaListener;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

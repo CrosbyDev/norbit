@@ -1,4 +1,4 @@
-package meteordevelopment.orbit;
+package io.github.racoondog.norbit;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

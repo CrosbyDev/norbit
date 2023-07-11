@@ -1,4 +1,4 @@
-package meteordevelopment.orbit;
+package io.github.racoondog.norbit;
 
 /**
  * Cancellable events need to implement this interface.

@@ -1,6 +1,6 @@
-package meteordevelopment.orbit.listeners;
+package io.github.racoondog.norbit.listeners;
 
-import meteordevelopment.orbit.EventHandler;
+import io.github.racoondog.norbit.EventHandler;
 
 import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;

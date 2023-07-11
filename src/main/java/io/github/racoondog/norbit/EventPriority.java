@@ -1,4 +1,4 @@
-package meteordevelopment.orbit;
+package io.github.racoondog.norbit;
 
 /**
  * Default event priorities.
