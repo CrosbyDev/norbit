@@ -83,12 +83,25 @@ public class EventBus implements IEventBus {
     }
 
     private void insert(List<IListener> listeners, IListener listener) {
-        int i = 0;
-        for (; i < listeners.size(); i++) {
-            if (listener.getPriority() > listeners.get(i).getPriority()) break;
+        // Binary search algorithm
+        int low = 0;
+        int high = listeners.size() - 1;
+
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            int priority = listeners.get(mid).getPriority();
+
+            if (priority > listener.getPriority()) {
+                low = mid + 1;
+            } else if (priority < listener.getPriority()) {
+                high = mid - 1;
+            } else {
+                listeners.add(mid, listener);
+                return;
+            }
         }
 
-        listeners.add(i, listener);
+        listeners.add(low, listener);
     }
 
     @Override
