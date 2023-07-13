@@ -79,10 +79,7 @@ public class EventBus implements IEventBus {
     private void subscribe(IListener listener, boolean onlyStatic) {
         if (onlyStatic) {
             if (listener.isStatic()) insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
-        }
-        else {
-            insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
-        }
+        } else insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
     }
 
     private void insert(List<IListener> listeners, IListener listener) {
@@ -120,8 +117,7 @@ public class EventBus implements IEventBus {
         if (l != null) {
             if (staticOnly) {
                 if (listener.isStatic()) l.remove(listener);
-            }
-            else l.remove(listener);
+            } else l.remove(listener);
         }
     }
 
@@ -140,11 +136,13 @@ public class EventBus implements IEventBus {
     }
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object) {
-        for (Method method : klass.getMethods()) {
+        for (Method method : klass.getDeclaredMethods()) {
             if (isValid(method)) {
                 listeners.add(new LambdaListener(getLambdaFactory(klass), klass, object, method));
             }
         }
+
+        if (klass.getSuperclass() != null) getListeners(listeners, klass.getSuperclass(), object);
     }
 
     private boolean isValid(Method method) {
