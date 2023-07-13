@@ -63,7 +63,7 @@ public class EventBus implements IEventBus {
 
     @Override
     public void subscribe(Class<?> klass) {
-        if (listenerMap.containsKey(klass)) return; // Instance subscription already registers static listeners + Prevent duplicate subscription
+        if (staticListenerCache.containsKey(klass)) return; // Prevent duplicate subscription
         subscribe(getStaticListeners(klass), true);
     }
 
@@ -93,13 +93,17 @@ public class EventBus implements IEventBus {
 
     @Override
     public void unsubscribe(Object object) {
-        unsubscribe(getInstanceListeners(object), false);
-        listenerCache.remove(object);
+        List<IListener> listeners = listenerCache.get(object);
+        if (listeners != null) {
+            unsubscribe(listeners, false);
+            listenerCache.remove(object);
+        }
     }
 
     @Override
     public void unsubscribe(Class<?> klass) {
-        unsubscribe(getStaticListeners(klass), true);
+        List<IListener> listeners = staticListenerCache.get(klass);
+        if (listeners != null) unsubscribe(listeners, true);
     }
 
     @Override
@@ -130,19 +134,21 @@ public class EventBus implements IEventBus {
     }
 
     private List<IListener> getListeners(Class<?> klass, Object object) {
-        List<IListener> listeners = new CopyOnWriteArrayList<>();
+        List<IListener> listeners = new ArrayList<>();
         getListeners(listeners, klass, object);
         return listeners;
     }
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object) {
-        for (Method method : klass.getDeclaredMethods()) {
-            if (isValid(method)) {
-                listeners.add(new LambdaListener(getLambdaFactory(klass), klass, object, method));
+        while (klass != null) {
+            for (Method method : klass.getDeclaredMethods()) {
+                if (isValid(method)) {
+                    listeners.add(new LambdaListener(getLambdaFactory(klass), klass, object, method));
+                }
             }
-        }
 
-        if (klass.getSuperclass() != null) getListeners(listeners, klass.getSuperclass(), object);
+            klass = klass.getSuperclass();
+        }
     }
 
     private boolean isValid(Method method) {
