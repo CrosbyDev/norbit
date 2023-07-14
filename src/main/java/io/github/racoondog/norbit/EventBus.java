@@ -154,9 +154,12 @@ public class EventBus implements IEventBus {
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object) {
         while (klass != null) {
-            for (Method method : klass.getDeclaredMethods()) {
+            LambdaListener.Factory factory = null;
+
+            for (var method : klass.getDeclaredMethods()) {
                 if (isValid(method)) {
-                    listeners.add(new LambdaListener(getLambdaFactory(klass), klass, object, method));
+                    if (factory == null) factory = getLambdaFactory(klass); //Lazy-loaded
+                    listeners.add(new LambdaListener(factory, klass, object, method));
                 }
             }
 
