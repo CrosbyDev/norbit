@@ -4,6 +4,7 @@ import io.github.racoondog.norbit.listeners.IListener;
 import io.github.racoondog.norbit.listeners.LambdaListener;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -58,28 +59,22 @@ public class EventBus implements IEventBus {
     @Override
     public void subscribe(Object object) {
         if (listenerCache.containsKey(object)) return; // Prevent duplicate subscription
-        subscribe(getInstanceListeners(object), false);
+        subscribe(getInstanceListeners(object));
     }
 
     @Override
     public void subscribe(Class<?> klass) {
         if (staticListenerCache.containsKey(klass)) return; // Prevent duplicate subscription
-        subscribe(getStaticListeners(klass), true);
+        subscribe(getStaticListeners(klass));
     }
 
     @Override
     public void subscribe(IListener listener) {
-        subscribe(listener, false);
+        insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
     }
 
-    private void subscribe(List<IListener> listeners, boolean onlyStatic) {
-        for (IListener listener : listeners) subscribe(listener, onlyStatic);
-    }
-
-    private void subscribe(IListener listener, boolean onlyStatic) {
-        if (onlyStatic) {
-            if (listener.isStatic()) insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
-        } else insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
+    private void subscribe(List<IListener> listeners) {
+        for (IListener listener : listeners) subscribe(listener);
     }
 
     private void insert(List<IListener> listeners, IListener listener) {
@@ -108,7 +103,7 @@ public class EventBus implements IEventBus {
     public void unsubscribe(Object object) {
         List<IListener> listeners = listenerCache.get(object);
         if (listeners != null) {
-            unsubscribe(listeners, false);
+            unsubscribe(listeners);
             listenerCache.remove(object);
         }
     }
@@ -116,48 +111,39 @@ public class EventBus implements IEventBus {
     @Override
     public void unsubscribe(Class<?> klass) {
         List<IListener> listeners = staticListenerCache.get(klass);
-        if (listeners != null) unsubscribe(listeners, true);
+        if (listeners != null) unsubscribe(listeners);
     }
 
     @Override
     public void unsubscribe(IListener listener) {
-        unsubscribe(listener, false);
-    }
-
-    private void unsubscribe(List<IListener> listeners, boolean staticOnly) {
-        for (IListener listener : listeners) unsubscribe(listener, staticOnly);
-    }
-
-    private void unsubscribe(IListener listener, boolean staticOnly) {
         List<IListener> l = listenerMap.get(listener.getTarget());
+        if (l != null) l.remove(listener);
+    }
 
-        if (l != null) {
-            if (staticOnly) {
-                if (listener.isStatic()) l.remove(listener);
-            } else l.remove(listener);
-        }
+    private void unsubscribe(List<IListener> listeners) {
+        for (IListener listener : listeners) unsubscribe(listener);
     }
 
     private List<IListener> getStaticListeners(Class<?> klass) {
-        return staticListenerCache.computeIfAbsent(klass, o -> getListeners(o, null));
+        return staticListenerCache.computeIfAbsent(klass, o -> getListeners(o, null, true));
     }
 
     private List<IListener> getInstanceListeners(Object object) {
-        return listenerCache.computeIfAbsent(object, o -> getListeners(o.getClass(), o));
+        return listenerCache.computeIfAbsent(object, o -> getListeners(o.getClass(), o, false));
     }
 
-    private List<IListener> getListeners(Class<?> klass, Object object) {
+    private List<IListener> getListeners(Class<?> klass, Object object, boolean staticOnly) {
         List<IListener> listeners = new ArrayList<>();
-        getListeners(listeners, klass, object);
+        getListeners(listeners, klass, object, staticOnly);
         return listeners;
     }
 
-    private void getListeners(List<IListener> listeners, Class<?> klass, Object object) {
+    private void getListeners(List<IListener> listeners, Class<?> klass, Object object, boolean staticOnly) {
         while (klass != null) {
             LambdaListener.Factory factory = null;
 
             for (var method : klass.getDeclaredMethods()) {
-                if (isValid(method)) {
+                if (isValid(method, staticOnly)) {
                     if (factory == null) factory = getLambdaFactory(klass); //Lazy-loaded
                     listeners.add(new LambdaListener(factory, klass, object, method));
                 }
@@ -167,7 +153,8 @@ public class EventBus implements IEventBus {
         }
     }
 
-    private boolean isValid(Method method) {
+    private boolean isValid(Method method, boolean staticOnly) {
+        if (staticOnly && !Modifier.isStatic(method.getModifiers())) return false;
         if (!method.isAnnotationPresent(EventHandler.class)) return false;
         if (method.getReturnType() != void.class) return false;
         if (method.getParameterCount() != 1) return false;

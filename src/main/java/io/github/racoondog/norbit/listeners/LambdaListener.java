@@ -41,7 +41,7 @@ public class LambdaListener implements IListener {
 
         try {
             this.executor = isStatic ? (Consumer<Object>) staticLambdaFactory(factory, klass, method).invoke()
-                    : (Consumer<Object>) computeLambdaFactory(factory, klass, method).invoke(object);
+                    : (Consumer<Object>) instanceLambdaFactory(factory, klass, method).invoke(object);
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
         }
@@ -59,7 +59,7 @@ public class LambdaListener implements IListener {
         return LambdaMetafactory.metafactory(lookup, "accept", invokedType, MethodType.methodType(void.class, Object.class), methodHandle, methodType).getTarget();
     }
 
-    private static MethodHandle computeLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
+    private static MethodHandle instanceLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
         MethodHandle lambdaFactory = methodHandleCache.get(method);
         if (lambdaFactory != null) return lambdaFactory;
 
