@@ -32,7 +32,7 @@ public class Example {
 
         @EventHandler(priority = EventPriority.HIGH)
         private void onEvent_instanceListener(Example.ExampleEvent event) { // Instance listener
-            System.out.println("Found event, but before the other one!)
+            System.out.println("Found event, but before the other one!");
         }
     }
 
