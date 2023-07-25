@@ -22,7 +22,7 @@ public class EventBus implements IEventBus {
     private final Map<Class<?>, List<IListener>> listenerMap;
     private final Supplier<List<IListener>> listenerListFactory;
 
-    private final List<LambdaFactoryInfo> lambdaFactoryInfos = new ArrayList<>();
+    private final List<LambdaFactoryInfo> lambdaFactoryInfos = new CopyOnWriteArrayList<>();
 
     public EventBus(Map<Object, List<IListener>> listenerCache, Map<Class<?>, List<IListener>> staticListenerCache, Map<Class<?>, List<IListener>> listenerMap, Supplier<List<IListener>> listenerListFactory) {
         this.listenerCache = listenerCache;
@@ -41,9 +41,7 @@ public class EventBus implements IEventBus {
 
     @Override
     public void registerLambdaFactory(String packagePrefix, LambdaListener.Factory factory) {
-        synchronized (lambdaFactoryInfos) {
-            lambdaFactoryInfos.add(new LambdaFactoryInfo(packagePrefix, factory));
-        }
+        lambdaFactoryInfos.add(new LambdaFactoryInfo(packagePrefix, factory));
     }
 
     @Override
@@ -181,10 +179,8 @@ public class EventBus implements IEventBus {
     }
 
     private LambdaListener.Factory getLambdaFactory(Class<?> klass) {
-        synchronized (lambdaFactoryInfos) {
-            for (LambdaFactoryInfo info : lambdaFactoryInfos) {
-                if (klass.getName().startsWith(info.packagePrefix)) return info.factory;
-            }
+        for (LambdaFactoryInfo info : lambdaFactoryInfos) {
+            if (klass.getName().startsWith(info.packagePrefix)) return info.factory;
         }
 
         throw new NoLambdaFactoryException(klass);
