@@ -2,7 +2,7 @@ package io.github.racoondog;
 
 public final class Constants {
     // Parameters
-    public static final int ITERATIONS = 1;
+    public static final int ITERATIONS = 10_000;
     public static final int LISTENERS = 16;
 
     // Benchmark settings
