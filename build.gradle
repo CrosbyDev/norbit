@@ -1,11 +1,33 @@
 plugins {
     id "java"
+    id "me.champeau.jmh" version "0.7.0"
 }
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
 
 version = project.project_version
 group = project.maven_group
 archivesBaseName = project.archives_base_name
 
+repositories {
+    mavenCentral()
+    maven {
+        name = "meteor-maven"
+        url = "https://maven.meteordev.org/releases"
+    }
+}
+
+dependencies {
+    jmh "meteordevelopment:orbit:0.2.3"
+    jmh "org.openjdk.jmh:jmh-core:1.36"
+    jmh "org.openjdk.jmh:jmh-generator-annprocess:1.36"
+    jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.36"
+}
+
 java {
     withSourcesJar()
+}
+
+jar {
+    from("LICENSE") { rename { "${it}_${project.archivesBaseName}" } }
 }

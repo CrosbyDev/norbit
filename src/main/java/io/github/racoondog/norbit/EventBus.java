@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
 
 /**
  * Default implementation of {@link IEventBus}.
@@ -15,12 +16,28 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class EventBus implements IEventBus {
     private record LambdaFactoryInfo(String packagePrefix, LambdaListener.Factory factory) {}
 
-    private final Map<Object, List<IListener>> listenerCache = Collections.synchronizedMap(new IdentityHashMap<>());
-    private final Map<Class<?>, List<IListener>> staticListenerCache = new ConcurrentHashMap<>();
+    private final Map<Object, List<IListener>> listenerCache;
+    private final Map<Class<?>, List<IListener>> staticListenerCache;
 
-    private final Map<Class<?>, List<IListener>> listenerMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, List<IListener>> listenerMap;
+    private final Supplier<List<IListener>> listenerListFactory;
 
     private final List<LambdaFactoryInfo> lambdaFactoryInfos = new ArrayList<>();
+
+    public EventBus(Map<Object, List<IListener>> listenerCache, Map<Class<?>, List<IListener>> staticListenerCache, Map<Class<?>, List<IListener>> listenerMap, Supplier<List<IListener>> listenerListFactory) {
+        this.listenerCache = listenerCache;
+        this.staticListenerCache = staticListenerCache;
+        this.listenerMap = listenerMap;
+        this.listenerListFactory = listenerListFactory;
+    }
+
+    public static EventBus threadSafe() {
+        return new EventBus(Collections.synchronizedMap(new IdentityHashMap<>()), new ConcurrentHashMap<>(), new ConcurrentHashMap<>(), CopyOnWriteArrayList::new);
+    }
+
+    public static EventBus threadUnsafe() {
+        return new EventBus(new IdentityHashMap<>(), new HashMap<>(), new HashMap<>(), ArrayList::new);
+    }
 
     @Override
     public void registerLambdaFactory(String packagePrefix, LambdaListener.Factory factory) {
@@ -34,7 +51,9 @@ public class EventBus implements IEventBus {
         List<IListener> listeners = listenerMap.get(event.getClass());
 
         if (listeners != null) {
-            for (IListener listener : listeners) listener.call(event);
+            for (int i = 0; i < listeners.size(); i++) {
+                listeners.get(i).call(event);
+            }
         }
 
         return event;
@@ -64,13 +83,12 @@ public class EventBus implements IEventBus {
 
     @Override
     public void subscribe(Class<?> klass) {
-        if (staticListenerCache.containsKey(klass)) return; // Prevent duplicate subscription
         subscribe(getStaticListeners(klass));
     }
 
     @Override
     public void subscribe(IListener listener) {
-        insert(listenerMap.computeIfAbsent(listener.getTarget(), aClass -> new CopyOnWriteArrayList<>()), listener);
+        insert(listenerMap.computeIfAbsent(listener.getTarget(), klass -> listenerListFactory.get()), listener);
     }
 
     private void subscribe(List<IListener> listeners) {

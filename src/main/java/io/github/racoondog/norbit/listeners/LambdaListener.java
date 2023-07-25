@@ -20,7 +20,7 @@ public class LambdaListener implements IListener {
     }
 
     private static final Method privateLookupInMethod;
-    private static final Map<Method, MethodHandle> methodHandleCache = new ConcurrentHashMap<>();
+    public static final Map<Method, MethodHandle> methodHandleCache = new ConcurrentHashMap<>();
 
     private final Class<?> target;
     private final boolean isStatic;
