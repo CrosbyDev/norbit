@@ -40,6 +40,20 @@ public class Example {
 }
 ```
 
+```groovy
+repositories {
+    maven {
+        name = "meteor-maven"
+        url = "https://maven.meteordev.org/releases"
+    }
+}
+
+dependencies {
+  modImplementation "io.github.racoondog:norbit:1.0.1"
+  include "io.github.racoondog:norbit:1.0.1"
+}
+```
+
 ## Orbit Comparison
 
 ### ConsumerListener Post
