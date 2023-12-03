@@ -3,7 +3,7 @@ package io.github.racoondog.norbit.threadsafe;
 import io.github.racoondog.BenchmarkEvent;
 import io.github.racoondog.Constants;
 import io.github.racoondog.norbit.EventBus;
-import io.github.racoondog.norbit.EventHandler;
+import meteordevelopment.orbit.EventHandler;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 

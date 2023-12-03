@@ -3,8 +3,8 @@ package io.github.racoondog.norbit.threadunsafe;
 import io.github.racoondog.BenchmarkEvent;
 import io.github.racoondog.Constants;
 import io.github.racoondog.norbit.EventBus;
-import io.github.racoondog.norbit.EventHandler;
 import io.github.racoondog.norbit.listeners.LambdaListener;
+import meteordevelopment.orbit.EventHandler;
 import org.openjdk.jmh.annotations.*;
 
 import java.lang.invoke.MethodHandles;

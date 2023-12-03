@@ -19,6 +19,8 @@ repositories {
 }
 
 dependencies {
+    implementation "meteordevelopment:orbit:0.2.3"
+
     jmh "meteordevelopment:orbit:0.2.3"
     jmh "org.openjdk.jmh:jmh-core:1.36"
     jmh "org.openjdk.jmh:jmh-generator-annprocess:1.36"

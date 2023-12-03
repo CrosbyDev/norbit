@@ -1,9 +1,9 @@
 package io.github.racoondog.norbit.listeners;
 
-import io.github.racoondog.norbit.EventHandler;
+import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.listeners.IListener;
 
 import java.lang.invoke.*;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Map;
@@ -14,11 +14,6 @@ import java.util.function.Consumer;
  * Default implementation of a {@link IListener} that creates a lambda at runtime to call the target method.
  */
 public class LambdaListener implements IListener {
-    @FunctionalInterface
-    public interface Factory {
-        MethodHandles.Lookup create(Method lookupInMethod, Class<?> klass) throws InvocationTargetException, IllegalAccessException;
-    }
-
     private static final Method privateLookupInMethod;
     public static final Map<Method, MethodHandle> methodHandleCache = new ConcurrentHashMap<>();
 
@@ -34,7 +29,7 @@ public class LambdaListener implements IListener {
      * @param method Method to create lambda for
      */
     @SuppressWarnings("unchecked")
-    public LambdaListener(Factory factory, Class<?> klass, Object object, Method method) {
+    public LambdaListener(meteordevelopment.orbit.listeners.LambdaListener.Factory factory, Class<?> klass, Object object, Method method) {
         this.target = method.getParameters()[0].getType();
         this.isStatic = Modifier.isStatic(method.getModifiers());
         this.priority = method.getAnnotation(EventHandler.class).priority();
@@ -47,7 +42,7 @@ public class LambdaListener implements IListener {
         }
     }
 
-    private static MethodHandle staticLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
+    private static MethodHandle staticLambdaFactory(meteordevelopment.orbit.listeners.LambdaListener.Factory factory, Class<?> klass, Method method) throws Throwable {
         String name = method.getName();
         MethodHandles.Lookup lookup = factory.create(privateLookupInMethod, klass);
 
@@ -59,7 +54,7 @@ public class LambdaListener implements IListener {
         return LambdaMetafactory.metafactory(lookup, "accept", invokedType, MethodType.methodType(void.class, Object.class), methodHandle, methodType).getTarget();
     }
 
-    private static MethodHandle instanceLambdaFactory(Factory factory, Class<?> klass, Method method) throws Throwable {
+    private static MethodHandle instanceLambdaFactory(meteordevelopment.orbit.listeners.LambdaListener.Factory factory, Class<?> klass, Method method) throws Throwable {
         MethodHandle lambdaFactory = methodHandleCache.get(method);
         if (lambdaFactory != null) return lambdaFactory;
 

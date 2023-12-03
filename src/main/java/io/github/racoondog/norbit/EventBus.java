@@ -1,7 +1,11 @@
 package io.github.racoondog.norbit;
 
-import io.github.racoondog.norbit.listeners.IListener;
 import io.github.racoondog.norbit.listeners.LambdaListener;
+import meteordevelopment.orbit.EventHandler;
+import meteordevelopment.orbit.ICancellable;
+import meteordevelopment.orbit.IEventBus;
+import meteordevelopment.orbit.NoLambdaFactoryException;
+import meteordevelopment.orbit.listeners.IListener;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -11,10 +15,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
- * Default implementation of {@link IEventBus}.
+ * Norbit's reimplementation of Orbit's {@link IEventBus}.
  */
 public class EventBus implements IEventBus {
-    private record LambdaFactoryInfo(String packagePrefix, LambdaListener.Factory factory) {}
+    private record LambdaFactoryInfo(String packagePrefix, meteordevelopment.orbit.listeners.LambdaListener.Factory factory) {}
 
     private final Map<Object, List<IListener>> listenerCache;
     private final Map<Class<?>, List<IListener>> staticListenerCache;
@@ -40,7 +44,7 @@ public class EventBus implements IEventBus {
     }
 
     @Override
-    public void registerLambdaFactory(String packagePrefix, LambdaListener.Factory factory) {
+    public void registerLambdaFactory(String packagePrefix, meteordevelopment.orbit.listeners.LambdaListener.Factory factory) {
         lambdaFactoryInfos.add(new LambdaFactoryInfo(packagePrefix, factory));
     }
 
@@ -156,7 +160,7 @@ public class EventBus implements IEventBus {
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object, boolean staticOnly) {
         while (klass != null) {
-            LambdaListener.Factory factory = null;
+            meteordevelopment.orbit.listeners.LambdaListener.Factory factory = null;
 
             for (var method : klass.getDeclaredMethods()) {
                 if (isValid(method, staticOnly)) {
@@ -178,7 +182,7 @@ public class EventBus implements IEventBus {
         return !method.getParameters()[0].getType().isPrimitive();
     }
 
-    private LambdaListener.Factory getLambdaFactory(Class<?> klass) {
+    private meteordevelopment.orbit.listeners.LambdaListener.Factory getLambdaFactory(Class<?> klass) {
         for (LambdaFactoryInfo info : lambdaFactoryInfos) {
             if (klass.getName().startsWith(info.packagePrefix)) return info.factory;
         }

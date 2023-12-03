@@ -3,8 +3,8 @@ package io.github.racoondog.norbit.threadsafe;
 import io.github.racoondog.BenchmarkEvent;
 import io.github.racoondog.Constants;
 import io.github.racoondog.norbit.EventBus;
-import io.github.racoondog.norbit.listeners.ConsumerListener;
-import io.github.racoondog.norbit.listeners.IListener;
+import meteordevelopment.orbit.listeners.ConsumerListener;
+import meteordevelopment.orbit.listeners.IListener;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
