@@ -21,10 +21,17 @@ repositories {
 dependencies {
     implementation "meteordevelopment:orbit:0.2.3"
 
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
     jmh "meteordevelopment:orbit:0.2.3"
     jmh "org.openjdk.jmh:jmh-core:1.36"
     jmh "org.openjdk.jmh:jmh-generator-annprocess:1.36"
     jmhAnnotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.36"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 java {
