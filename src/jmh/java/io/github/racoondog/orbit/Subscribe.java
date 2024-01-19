@@ -1,9 +1,12 @@
 package io.github.racoondog.orbit;
 
-import io.github.racoondog.BenchmarkEvent;
+import io.github.racoondog.util.BenchmarkEvent;
 import io.github.racoondog.Constants;
+import io.github.racoondog.util.JmhUtils;
 import meteordevelopment.orbit.EventBus;
+import meteordevelopment.orbit.EventPriority;
 import meteordevelopment.orbit.listeners.ConsumerListener;
+import meteordevelopment.orbit.listeners.IListener;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -14,21 +17,24 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = Constants.WARMUP_ITERATIONS, time = Constants.WARMUP_TIME)
 @Measurement(iterations = Constants.MEASUREMENT_ITERATIONS, time = Constants.MEASUREMENT_TIME)
 @Fork(value = Constants.MEASUREMENT_FORKS, warmups = Constants.WARMUP_FORKS)
-public class Consumer_Priority_Subscribe {
+public class Subscribe {
     private EventBus orbit;
-    private int priorityStep;
+    private IListener listener;
 
     @Setup(Level.Invocation)
     public void setup() {
         orbit = new EventBus();
-        priorityStep = (int) Math.floor(1000f / Constants.LISTENERS);
+
+        for (float i = 0; i < Constants.LISTENERS; i++) {
+            int priority = JmhUtils.lerp(i / Constants.LISTENERS, EventPriority.LOWEST, EventPriority.HIGHEST);
+            orbit.subscribe(new ConsumerListener<>(BenchmarkEvent.class, priority, event -> event.blackhole().consume(Integer.bitCount(Integer.parseInt("123")))));
+        }
+
+        listener = new ConsumerListener<>(BenchmarkEvent.class, event -> event.blackhole().consume(Integer.bitCount(Integer.parseInt("123"))));
     }
 
     @Benchmark
     public void bench() {
-        for (int i = 0; i < Constants.LISTENERS; i++) {
-            int priority = 500 - i * priorityStep;
-            orbit.subscribe(new ConsumerListener<BenchmarkEvent>(BenchmarkEvent.class, priority, event -> event.blackhole().consume(Integer.bitCount(Integer.parseInt("123")))));
-        }
+        orbit.subscribe(listener);
     }
 }

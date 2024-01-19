@@ -1,4 +1,4 @@
-package io.github.racoondog;
+package io.github.racoondog.util;
 
 import org.openjdk.jmh.infra.Blackhole;
 
