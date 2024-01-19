@@ -49,6 +49,12 @@ public class EventBus implements IEventBus {
     }
 
     @Override
+    public boolean isListening(Class<?> eventClass) {
+        List<IListener> listeners = listenerMap.get(eventClass);
+        return listeners != null && !listeners.isEmpty();
+    }
+
+    @Override
     public <T> T post(T event) {
         List<IListener> listeners = listenerMap.get(event.getClass());
 
