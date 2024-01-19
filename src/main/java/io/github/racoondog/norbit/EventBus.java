@@ -68,8 +68,8 @@ public class EventBus implements IEventBus {
         if (listeners != null) {
             event.setCancelled(false);
 
-            for (IListener listener : listeners) {
-                listener.call(event);
+            for (int i = 0; i < listeners.size(); i++) {
+                listeners.get(i).call(event);
                 if (event.isCancelled()) break;
             }
         }
