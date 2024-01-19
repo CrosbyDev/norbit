@@ -79,32 +79,28 @@ public class EventBus implements IEventBus {
 
     @Override
     public void subscribe(Object object) {
-        if (listenerCache.containsKey(object)) return; // Prevent duplicate subscription
-        subscribe(getInstanceListeners(object));
+        if (listenerCache.containsKey(object)) return;
+        subscribe(getInstanceListeners(object), false);
     }
 
     @Override
     public void subscribe(Class<?> klass) {
-        subscribe(getStaticListeners(klass));
+        List<IListener> listeners = getStaticListeners(klass);
+        subscribe(listeners, !listeners.isEmpty());
     }
 
     @Override
     public void subscribe(IListener listener) {
-        insert(listenerMap.computeIfAbsent(listener.getTarget(), klass -> listenerListFactory.get()), listener);
+        subscribe(listener, true);
     }
 
-    private void subscribe(List<IListener> listeners) {
-        for (IListener listener : listeners) subscribe(listener);
+    private void subscribe(List<IListener> listeners, boolean check) {
+        for (IListener listener : listeners) subscribe(listener, check);
     }
 
-    private void insert(List<IListener> listeners, IListener listener) {
-        //todo binary search O(logN) insertion
-        int i = 0;
-        for (; i < listeners.size(); i++) {
-            if (listener.getPriority() > listeners.get(i).getPriority()) break;
-        }
-
-        listeners.add(i, listener);
+    private void subscribe(IListener listener, boolean check) {
+        List<IListener> listeners = listenerMap.computeIfAbsent(listener.getTarget(), klass -> listenerListFactory.get());
+        if (!check || !ListOperations.contains(listeners, listener)) ListOperations.insert(listeners, listener);
     }
 
     @Override
@@ -124,8 +120,8 @@ public class EventBus implements IEventBus {
 
     @Override
     public void unsubscribe(IListener listener) {
-        List<IListener> l = listenerMap.get(listener.getTarget());
-        if (l != null) l.remove(listener);
+        List<IListener> listeners = listenerMap.get(listener.getTarget());
+        if (listeners != null) ListOperations.remove(listeners, listener);
     }
 
     private void unsubscribe(List<IListener> listeners) {
