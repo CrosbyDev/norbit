@@ -1,4 +1,6 @@
-package test;
+package test.util;
+
+import org.junit.jupiter.api.Assertions;
 
 public final class TestEvent {
     private boolean callback = false;
@@ -13,5 +15,10 @@ public final class TestEvent {
 
     public boolean wasRan() {
         return this.callback;
+    }
+
+    public void ensureRanOnce(String errorMessage) {
+        if (wasRan()) Assertions.fail(errorMessage);
+        callback();
     }
 }

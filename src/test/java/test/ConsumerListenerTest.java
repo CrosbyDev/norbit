@@ -4,6 +4,7 @@ import io.github.racoondog.norbit.EventBus;
 import meteordevelopment.orbit.listeners.ConsumerListener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import test.util.TestEvent;
 
 public class ConsumerListenerTest {
     @Test
@@ -14,6 +15,6 @@ public class ConsumerListenerTest {
         TestEvent event = new TestEvent();
         eventBus.post(event);
 
-        Assertions.assertTrue(event.wasRan());
+        Assertions.assertTrue(event.wasRan(), "ConsumerListener was not ran.");
     }
 }

@@ -4,20 +4,19 @@ import io.github.racoondog.norbit.EventBus;
 import meteordevelopment.orbit.EventHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.lang.invoke.MethodHandles;
+import test.util.NorbitTests;
+import test.util.TestEvent;
 
 public class StaticListenerTest {
     @Test
     public void executeTest() {
-        EventBus eventBus = EventBus.threadSafe();
-        eventBus.registerLambdaFactory("test", (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
+        EventBus eventBus = NorbitTests.create();
         eventBus.subscribe(StaticListenerTest.class);
 
         TestEvent event = new TestEvent();
         eventBus.post(event);
 
-        Assertions.assertTrue(event.wasRan());
+        Assertions.assertTrue(event.wasRan(), "Static listener was not ran.");
     }
 
     @EventHandler

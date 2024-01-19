@@ -5,14 +5,13 @@ import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
-import java.lang.invoke.MethodHandles;
+import test.util.NorbitTests;
+import test.util.TestCancellableEvent;
 
 public class CancellableTest {
     @Test
     public void executeTest() {
-        EventBus eventBus = EventBus.threadSafe();
-        eventBus.registerLambdaFactory("test", (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
+        EventBus eventBus = NorbitTests.create();
         eventBus.subscribe(this);
 
         eventBus.post(new TestCancellableEvent());

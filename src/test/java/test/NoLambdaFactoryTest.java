@@ -5,6 +5,7 @@ import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.NoLambdaFactoryException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import test.util.TestEvent;
 
 public class NoLambdaFactoryTest {
     @Test

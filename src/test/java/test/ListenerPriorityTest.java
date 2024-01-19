@@ -5,24 +5,28 @@ import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import test.util.NorbitTests;
 
-import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ListenerPriorityTest {
     @Test
     public void executeTest() {
-        EventBus eventBus = EventBus.threadSafe();
-        eventBus.registerLambdaFactory("test", (lookupInMethod, klass) -> (MethodHandles.Lookup) lookupInMethod.invoke(null, klass, MethodHandles.lookup()));
+        EventBus eventBus = NorbitTests.create();
         eventBus.subscribe(this);
 
         TestPriorityEvent event = new TestPriorityEvent();
         eventBus.post(event);
 
+        Integer[] priorities = event.priorities.toArray(new Integer[0]);
+        Integer[] correctPriorities = new Integer[]{EventPriority.HIGHEST, EventPriority.HIGH, EventPriority.MEDIUM, EventPriority.LOW, EventPriority.LOWEST};
+
         Assertions.assertArrayEquals(
-                event.priorities.toArray(new Integer[0]),
-                new Integer[]{EventPriority.HIGHEST, EventPriority.HIGH, EventPriority.MEDIUM, EventPriority.LOW, EventPriority.LOWEST}
+                priorities,
+                correctPriorities,
+                () -> "Listener were ran out of priority-based order: " + Arrays.toString(priorities) + " != " + Arrays.toString(correctPriorities)
         );
     }
 
@@ -36,6 +40,7 @@ public class ListenerPriorityTest {
         event.priorities.add(EventPriority.HIGH);
     }
 
+    @SuppressWarnings("DefaultAnnotationParam")
     @EventHandler(priority = EventPriority.MEDIUM)
     private void onEventMedium(TestPriorityEvent event) {
         event.priorities.add(EventPriority.MEDIUM);
