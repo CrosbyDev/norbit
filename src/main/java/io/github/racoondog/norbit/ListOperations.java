@@ -5,6 +5,8 @@ import meteordevelopment.orbit.listeners.IListener;
 import java.util.List;
 
 public class ListOperations {
+    private static final int MIN_BINARY_SEARCH_THRESHOLD = 8;
+
     /**
      * {@link List#remove(Object)} with referential equality and short-circuit based on priority
      */
@@ -31,14 +33,23 @@ public class ListOperations {
         return false;
     }
 
-    /**
-     * Binary search insertion based on priority
-     */
     public static void insert(List<IListener> listeners, IListener listener) {
-        int index = binarySearch(listeners, listener);
+        int index = listeners.size() < MIN_BINARY_SEARCH_THRESHOLD ? linearSearch(listeners, listener)
+                : binarySearch(listeners, listener);
+
         listeners.add(index, listener);
     }
 
+    private static int linearSearch(List<IListener> listeners, IListener listener) {
+        for (int i = 0; i < listeners.size(); i++) {
+            if (listener.getPriority() > listeners.get(i).getPriority()) return i;
+        }
+        return 0;
+    }
+
+    /**
+     * Binary search insertion based on priority
+     */
     private static int binarySearch(List<IListener> listeners, IListener listener) {
         int low = 0;
         int high = listeners.size() - 1;
