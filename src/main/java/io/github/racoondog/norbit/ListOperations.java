@@ -25,8 +25,7 @@ public class ListOperations {
      */
     public static boolean contains(List<IListener> listeners, IListener listener) {
         int priority = listener.getPriority();
-        for (int i = 0; i < listeners.size(); i++) {
-            IListener o = listeners.get(i);
+        for (IListener o : listeners) {
             if (o == listener) return true;
             if (o.getPriority() < priority) break;
         }
