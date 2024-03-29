@@ -40,7 +40,7 @@ public class EventBus implements IEventBus {
     }
 
     public static EventBus threadUnsafe() {
-        return new EventBus(new IdentityHashMap<>(), new HashMap<>(), new HashMap<>(), ArrayList::new);
+        return new EventBus(new IdentityHashMap<>(), new HashMap<>(), new HashMap<>(), CopyOnWriteArrayList::new);
     }
 
     @Override
@@ -59,8 +59,8 @@ public class EventBus implements IEventBus {
         List<IListener> listeners = listenerMap.get(event.getClass());
 
         if (listeners != null) {
-            for (int i = 0; i < listeners.size(); i++) {
-                listeners.get(i).call(event);
+            for (IListener listener : listeners) {
+                listener.call(event);
             }
         }
 
@@ -74,8 +74,8 @@ public class EventBus implements IEventBus {
         if (listeners != null) {
             event.setCancelled(false);
 
-            for (int i = 0; i < listeners.size(); i++) {
-                listeners.get(i).call(event);
+            for (IListener listener : listeners) {
+                listener.call(event);
                 if (event.isCancelled()) break;
             }
         }
