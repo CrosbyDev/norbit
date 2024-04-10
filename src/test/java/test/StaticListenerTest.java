@@ -1,6 +1,5 @@
 package test;
 
-import io.github.racoondog.norbit.EventBus;
 import meteordevelopment.orbit.EventHandler;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -10,13 +9,14 @@ import test.util.TestEvent;
 public class StaticListenerTest {
     @Test
     public void executeTest() {
-        EventBus eventBus = NorbitTests.create();
-        eventBus.subscribe(StaticListenerTest.class);
+        NorbitTests.test(eventBus -> {
+            eventBus.subscribe(StaticListenerTest.class);
 
-        TestEvent event = new TestEvent();
-        eventBus.post(event);
+            TestEvent event = new TestEvent();
+            eventBus.post(event);
 
-        Assertions.assertTrue(event.wasRan(), "Static listener was not ran.");
+            Assertions.assertTrue(event.wasRan(), "Static listener was not ran.");
+        }).withInitialization().execute();
     }
 
     @EventHandler

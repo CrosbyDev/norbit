@@ -1,6 +1,5 @@
 package test;
 
-import io.github.racoondog.norbit.EventBus;
 import meteordevelopment.orbit.EventHandler;
 import meteordevelopment.orbit.EventPriority;
 import org.junit.jupiter.api.Assertions;
@@ -11,10 +10,11 @@ import test.util.TestCancellableEvent;
 public class CancellableTest {
     @Test
     public void executeTest() {
-        EventBus eventBus = NorbitTests.create();
-        eventBus.subscribe(this);
+        NorbitTests.test(eventBus -> {
+            eventBus.subscribe(this);
 
-        eventBus.post(new TestCancellableEvent());
+            eventBus.post(new TestCancellableEvent());
+        }).withInitialization().ofEvent(TestCancellableEvent.class).execute();
     }
 
     @EventHandler(priority = EventPriority.HIGH)
