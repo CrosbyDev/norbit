@@ -56,6 +56,6 @@ repositories {
 
 dependencies {
     implementation "meteordevelopment:orbit:0.2.4"
-    implementation "io.github.racoondog:norbit:1.1.0"
+    implementation "io.github.racoondog:norbit:1.2.0"
 }
 ```
