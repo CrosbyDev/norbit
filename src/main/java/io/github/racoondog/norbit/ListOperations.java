@@ -40,10 +40,11 @@ public class ListOperations {
     }
 
     private static int linearSearch(List<IListener> listeners, IListener listener) {
-        for (int i = 0; i < listeners.size(); i++) {
+        int size = listeners.size();
+        for (int i = 0; i < size; i++) {
             if (listener.getPriority() > listeners.get(i).getPriority()) return i;
         }
-        return 0;
+        return size;
     }
 
     /**

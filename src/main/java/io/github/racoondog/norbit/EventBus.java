@@ -40,7 +40,7 @@ public class EventBus implements IEventBus {
     }
 
     public static EventBus threadUnsafe() {
-        return new EventBus(new IdentityHashMap<>(), new HashMap<>(), new HashMap<>(), CopyOnWriteArrayList::new);
+        return new EventBus(new IdentityHashMap<>(), new IdentityHashMap<>(), new IdentityHashMap<>(), CopyOnWriteArrayList::new);
     }
 
     @Override
@@ -52,6 +52,65 @@ public class EventBus implements IEventBus {
     public boolean isListening(Class<?> eventClass) {
         List<IListener> listeners = listenerMap.get(eventClass);
         return listeners != null && !listeners.isEmpty();
+    }
+
+    /**
+     * @return whether the {@link IListener} is currently subscribed to the event bus.
+     * @since 1.2.0
+     */
+    public boolean isSubscribed(IListener listener) {
+        List<IListener> listeners = listenerMap.get(listener.getTarget());
+        return listeners != null && ListOperations.contains(listeners, listener);
+    }
+
+    /**
+     * @return whether the {@link Object} currently has its listeners subscribed to the event bus.
+     * @since 1.2.0
+     */
+    public boolean isSubscribed(Object object) {
+        return listenerCache.containsKey(object);
+    }
+
+    /**
+     * @return whether the {@link Class} currently has all of its immediate (ignoring static listeners inherited from
+     * superclasses) static listeners subscribed to the event bus.
+     * @since 1.2.0
+     */
+    public boolean isSubscribed(Class<?> staticListener) {
+        List<IListener> listeners = staticListenerCache.get(staticListener);
+        for (IListener listener : listeners) {
+            if (listener instanceof LambdaListener lambdaListener) {
+                if (lambdaListener.owner != staticListener) break; // getListeners(List<IListener>, Class<?>, Object, boolean) implicitly orders based on inheritance
+                if (!this.isSubscribed(listener)) return true;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @return whether the {@link Class} or any of its superclasses have *any* of its static listeners subscribed to the event bus.
+     * @since 1.2.0
+     */
+    public boolean areAnySubscribed(Class<?> staticListener) {
+        List<IListener> listeners = staticListenerCache.get(staticListener);
+        if (listeners == null) return false;
+        for (IListener listener : listeners) {
+            if (this.isSubscribed(listener)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return whether the {@link Class} or any of its superclasses have *all* of its static listeners subscribed to the event bus.
+     * @since 1.2.0
+     */
+    public boolean areAllSubscribed(Class<?> staticListener) {
+        List<IListener> listeners = staticListenerCache.get(staticListener);
+        if (listeners == null) return false;
+        for (IListener listener : listeners) {
+            if (!this.isSubscribed(listener)) return false;
+        }
+        return true;
     }
 
     @Override
@@ -92,7 +151,7 @@ public class EventBus implements IEventBus {
     @Override
     public void subscribe(Class<?> klass) {
         List<IListener> listeners = getStaticListeners(klass);
-        subscribe(listeners, !listeners.isEmpty());
+        subscribe(listeners, true);
     }
 
     @Override
@@ -145,7 +204,7 @@ public class EventBus implements IEventBus {
     private List<IListener> getListeners(Class<?> klass, Object object, boolean staticOnly) {
         List<IListener> listeners = new ArrayList<>();
         getListeners(listeners, klass, object, staticOnly);
-        return listeners;
+        return new ArrayBackedImmutableList<>(listeners);
     }
 
     private void getListeners(List<IListener> listeners, Class<?> klass, Object object, boolean staticOnly) {
@@ -154,7 +213,7 @@ public class EventBus implements IEventBus {
 
             for (var method : klass.getDeclaredMethods()) {
                 if (isValid(method, staticOnly)) {
-                    if (factory == null) factory = getLambdaFactory(klass); //Lazy-loaded
+                    if (LambdaListener.requireLambdaFactoryRegistration() && factory == null) factory = getLambdaFactory(klass); //Lazy-loaded
                     listeners.add(new LambdaListener(factory, klass, object, method));
                 }
             }
